@@ -26,7 +26,7 @@ being the particular condition clause type in the original args that matched."
                                    ,@clauses)))))
          (,sink-sym ,pipe)))))
 
-(defun pipe-endp (pipe) (eq pipe 'empty-pipe))
+(defun pipe-endp (pipe) (eq pipe :empty-pipe))
 
 (defun pipe-first (pipe) (first pipe))
 
@@ -42,7 +42,7 @@ being the particular condition clause type in the original args that matched."
   "Runs procedure on each element of pipe; replacing each original element"
   (declare (type function procedure) (optimize speed))
   (if (pipe-endp pipe)
-      'empty-pipe
+      :empty-pipe
       (pipe-cons (funcall procedure (pipe-first pipe))
                  (pipe-transform procedure (pipe-rest pipe)))))
 
@@ -57,7 +57,7 @@ procedure.  Useful to provoke the pipeline processing of an infinite pipe."
 If the pipe goes empty, returns nil. The test procedure is called with the current element as arg."
   (declare (type function test) (optimize speed))
   (if (pipe-endp pipe)
-      nil
+      :empty-pipe
       (if (funcall test (pipe-first pipe))
           pipe
           (pipe-sink-until test (pipe-rest pipe)))))
@@ -75,10 +75,10 @@ If the pipe goes empty, returns nil. The test procedure is called with the curre
   "Runs test on each element.  When it returns t, the pipe is truncated before that element"
   (if (functionp test)
       (if (pipe-endp pipe)
-          'empty-pipe
+          :empty-pipe
           (let ((x (pipe-first pipe)))
             (if (funcall test x)
-                'empty-pipe
+                :empty-pipe
                 (pipe-cons x (pipe-end-before test (pipe-rest pipe))))))
       pipe))
 
@@ -86,17 +86,17 @@ If the pipe goes empty, returns nil. The test procedure is called with the curre
   "Runs test on each element.  When it returns t, the pipe is truncated after that element"
   (if (functionp test)
       (if (pipe-endp pipe)
-          'empty-pipe
+          :empty-pipe
           (let ((x (pipe-first pipe)))
             (if (funcall test x)
-                (list x 'empty-pipe)
+                (list x :empty-pipe)
                 (pipe-cons x (pipe-end-after test (pipe-rest pipe))))))
       pipe))
 
 (defun pipe-last (pipe &optional (n 1))
   (declare (type (and fixnum (integer 1 *)) n) (optimize speed))
   (if (pipe-endp pipe)
-      'empty-pipe
+      :empty-pipe
       (let (q)
         (labels ((pipe-last (pipe &aux (next (pipe-rest pipe)))
                    (when (= n (fifo-count q)) (fifo-get q))
@@ -108,7 +108,7 @@ If the pipe goes empty, returns nil. The test procedure is called with the curre
   "Truncates a pipe after n (default: 1) elements"
   (declare (type fixnum n) (optimize speed))
   (if (or (zerop n) (pipe-endp pipe))
-      'empty-pipe
+      :empty-pipe
       (pipe-cons (pipe-first pipe) (pipe-head (pipe-rest pipe) (1- n)))))
 
 (defun pipe-to-list (pipe)
@@ -124,14 +124,14 @@ infinite."
   (labels ((list-pipe (l)
              (if (cdr l)
                  (pipe-cons (car l) (list-to-pipe (cdr l)))
-                 (list (car l) 'empty-pipe))))
-    (if (null l) 'empty-pipe (list-to-pipe l))))
+                 (list (car l) :empty-pipe))))
+    (if (null l) :empty-pipe (list-to-pipe l))))
 
 (defun pipe-uniq (pipe &optional (pair-uniq-p #'equal) carry)
   "Removes duplicates according to optional predicate func. Only dups in sequence are removed."
   (declare (type function pair-uniq-p) (optimize speed))
   (cond
-    ((pipe-endp pipe) (if carry (list carry 'empty-pipe) 'empty-pipe))
+    ((pipe-endp pipe) (if carry (list carry :empty-pipe) :empty-pipe))
     ((null carry) (pipe-uniq (pipe-rest pipe) pair-uniq-p (pipe-first pipe)))
     ((funcall pair-uniq-p carry (pipe-first pipe))
      (pipe-uniq (pipe-rest pipe) pair-uniq-p (pipe-first pipe)))
@@ -149,7 +149,7 @@ infinite."
   "If procedure returns t, that particular pipe element is removed from the sequence."
   (declare (type function procedure) (optimize speed))
   (if (pipe-endp pipe)
-      'empty-pipe
+      :empty-pipe
       (let* ((x (pipe-first pipe)) (ret (funcall procedure x)))
         (if ret
             (pipe-filter procedure (pipe-rest pipe))
@@ -161,7 +161,7 @@ infinite."
 handles it, the default behavior is to ignore.  If the use-value restart is invoked, that value will
 be returned as a pipe datum element."
   (if (pipe-endp pipe)
-      'empty-pipe
+      :empty-pipe
       (let ((x (pipe-first pipe)))
         (if (subtypep (type-of x) 'condition)
             (let ((sigret (restart-case (signal x)
@@ -179,7 +179,7 @@ be returned as a pipe datum element."
   "Runs procedure on every element as they are exposed, but does not transform the element."
   (declare (type function procedure) (optimize speed))
   (if (pipe-endp pipe)
-      'empty-pipe
+      :empty-pipe
       (pipe-cons (let ((x (pipe-first pipe))) (funcall procedure x) x)
                  (pipe-apply procedure (pipe-rest pipe)))))
 

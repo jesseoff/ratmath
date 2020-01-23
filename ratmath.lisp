@@ -53,14 +53,14 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 (defun truncate-within-interval (cf1 cf2)
   "Takes 2 continued-fraction-pipes and returns one that stops at the simplest rational inbetween"
   (if (or (pipe-endp cf1) (pipe-endp cf2))
-      'empty-pipe
+      :empty-pipe
       (let* ((a (pipe-first cf1))
              (b (pipe-first cf2))
              (an (car a))
              (bn (car b)))
         (declare (type integer an bn))
         (if (/= an bn)
-            (list (cons (1+ (min an bn)) (constantly 0))  'empty-pipe)
+            (list (cons (1+ (min an bn)) (constantly 0))  :empty-pipe)
             (pipe-cons a (truncate-within-interval (pipe-rest cf1) (pipe-rest cf2)))))))
 
 (defun continued-fraction-pipe (f)
@@ -69,7 +69,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
   (multiple-value-bind (q r) (floor f)
     (declare (type integer q) (type rational r))
     (if (zerop r)
-        (list (cons q (constantly 0)) 'empty-pipe)
+        (list (cons q (constantly 0)) :empty-pipe)
         (pipe-cons (cons q (encapsulate (rem (numerator r) (denominator r))))
                      (continued-fraction-pipe (/ r))))))
 
@@ -195,7 +195,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
   "From a continued-fraction-pipe return a pipe of the resultant convergents."
   (declare (type cons r0 r1) (type function a))
   (if (pipe-endp cfs)
-      'empty-pipe
+      :empty-pipe
       (let ((x (make-convergent (pipe-first cfs) r0 r1 a))
             (nexta (cdr (pipe-first cfs))))
         (declare (type convergent x))
@@ -242,7 +242,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
              (ftype (function (convergent) boolean) last-semi-convergent-p))
     (values-list (semi-convergents (convergents-pipe arg) (get-end-p)))))
 
-(let ((cf0 (list (cons 0 (constantly 0)) 'empty-pipe)))
+(let ((cf0 (list (cons 0 (constantly 0)) :empty-pipe)))
   (defun farey-pipe (order &key test-fn (from-cf cf0) (limn order))
     "Returns a farey sequence; 2nd value is an encapsulated reverse sequence"
     (declare (type (integer 1 *) order) (type (or null (integer 1 *)) limn))
@@ -251,7 +251,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
            (declare (type boolean dir) (type stern-brocot x))
            (if (zerop (stern-brocot-numerator x))
                (if dir
-                   'empty-pipe
+                   :empty-pipe
                    (let ((yr (/ 1 order))) (pipe-cons yr (farey (calc-stern-brocot yr) dir))))
                (let* ((l (if dir (stern-brocot-right-parent x) (stern-brocot-left-parent x)))
                       (k (my-min (my/ (my- limn (car l)) (stern-brocot-numerator x))
@@ -259,7 +259,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
                       (y (cons (+ (* (stern-brocot-numerator x) k) (car l))
                                (+ (* (stern-brocot-denominator x) k) (cdr l)))))
                  (cond
-                   ((or (zerop (cdr y)) (zerop (car y))) 'empty-pipe)
+                   ((or (zerop (cdr y)) (zerop (car y))) :empty-pipe)
                    (t (let ((yr (/ (car y) (cdr y))))
                         (pipe-cons yr (farey (calc-stern-brocot yr) dir))))))))
          (farey-start (a b dir)
@@ -307,7 +307,7 @@ arg is not a number, assumes it is a continued fraction pipe."
        ((expt-convergents (cvs &optional (limn 1) (limd 1))
          (declare (type (integer 1 *) limn limd))
          (cond
-           ((pipe-endp cvs) 'empty-pipe)
+           ((pipe-endp cvs) :empty-pipe)
            ((and limd (> (convergent-denominator (pipe-first cvs)) limd))
             (let ((sc (semi-convergent-closest-to-lim (pipe-first cvs) limn limd))
                   (next-limd (1- (* mult (1+ limd)))))
