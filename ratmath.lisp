@@ -52,6 +52,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 
 (defun truncate-within-interval (cf1 cf2)
   "Takes 2 continued-fraction-pipes and returns one that stops at the simplest rational inbetween"
+  (declare (optimize speed (safety 0) (debug 0)))
   (if (or (pipe-endp cf1) (pipe-endp cf2))
       :empty-pipe
       (let* ((a (pipe-first cf1))
@@ -65,7 +66,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 
 (defun continued-fraction-pipe (f)
   "Returns a pipe of continued fraction terms from the input rational arg."
-  (declare (type rational f))
+  (declare (type rational f) (optimize speed (safety 0) (debug 0)))
   (multiple-value-bind (q r) (floor f)
     (declare (type integer q) (type rational r))
     (if (zerop r)
@@ -171,7 +172,8 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
   "From a specific convergent, check semi-convergents for one below num/denom limits"
   (declare (type (or null (integer 1 *)) limn limd)
            (type integer q)
-           (type convergent cv))
+           (type convergent cv)
+           (optimize speed (safety 0) (debug 0)))
   (labels
       ((halfq-is-ok-p (cv)
          (let ((a-1 (expose (convergent-a cv)))
@@ -193,7 +195,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 
 (defun convergents-pipe (cfs &optional (r0 '(1 . 0)) (r1 '(0 . 1)) (a (constantly 0)))
   "From a continued-fraction-pipe return a pipe of the resultant convergents."
-  (declare (type cons r0 r1) (type function a))
+  (declare (type cons r0 r1) (type function a) (optimize speed (safety 0) (debug 0)))
   (if (pipe-endp cfs)
       :empty-pipe
       (let ((x (make-convergent (pipe-first cfs) r0 r1 a))
@@ -206,7 +208,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
     (let ((n `(> (the integer (convergent-numerator cv)) ,limn))
           (d `(> (the integer (convergent-denominator cv)) ,limd)))
       `(lambda (cv)
-         (declare (optimize speed) (type convergent cv))
+         (declare (optimize speed (safety 0) (debug 0)) (type convergent cv))
          ,@(cond
              ((and (null limn) (null limd)) `((declare (ignore cv)) nil))
              ((and (null limn) limd) `(,d))
@@ -216,7 +218,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 (defun best-convergent (arg &key limn limd test-fn)
   "From a rationalized continued-fraction-pipe arg, returns best convergent honoring limits.
 2nd value being the next best ignoring limits."
-  (declare (type (or null (integer 1 *)) limn limd))
+  (declare (type (or null (integer 1 *)) limn limd) (optimize speed (safety 0) (debug 0)))
   (labels
       ((get-end-p ()
          (cond
@@ -226,7 +228,8 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
            (limn (best-convergent-test-fn :limn limn))
            (t (best-convergent-test-fn))))
        (semi-convergents (cvs lim-test-p &optional prev)
-         (declare (type (function (convergent) boolean) lim-test-p))
+         (declare (type (function (convergent) boolean) lim-test-p)
+                  (optimize speed (safety 0) (debug 0)))
          (cond
            ((pipe-endp cvs) (list prev))
            ((funcall lim-test-p (pipe-first cvs))
@@ -245,7 +248,8 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 (let ((cf0 (list (cons 0 (constantly 0)) :empty-pipe)))
   (defun farey-pipe (order &key test-fn (from-cf cf0) (limn order))
     "Returns a farey sequence; 2nd value is an encapsulated reverse sequence"
-    (declare (type (integer 1 *) order) (type (or null (integer 1 *)) limn))
+    (declare (type (integer 1 *) order) (type (or null (integer 1 *)) limn)
+             (optimize speed (safety 0) (debug 0)))
     (labels
         ((farey (x dir)
            (declare (type boolean dir) (type stern-brocot x))
@@ -302,7 +306,7 @@ end-value so we can give downpipe logic no insight as to whether an iffy semi-co
 (defun rat-pipe (arg &optional (mult 2))
   "Returns a pipe of best rational approximations for every power-of-mult numerator/denominator.  If
 arg is not a number, assumes it is a continued fraction pipe."
-  (declare (type (and fixnum (integer 2 *)) mult))
+  (declare (type (and fixnum (integer 2 *)) mult) (optimize speed (safety 0) (debug 0)))
   (labels
        ((expt-convergents (cvs &optional (limn 1) (limd 1))
          (declare (type (integer 1 *) limn limd))
@@ -602,7 +606,7 @@ like an interval and leaves everything else intact."
 specification. e.g. 1.000 implies an interval of [.9995, 1.0005) whereas just 1 implies [.5, 1.5).
 Exponent notation is also recognized; 1e3 is [500, 1500) whereas 1000 is [999.5, 1000.5). A rational
 specified as 22/7 is converted as (43/14, 45/14)."
-  (declare (optimize speed))
+  (declare (optimize speed (safety 0) (debug 0)))
   (cond
     ((listp s) (mapcar #'parse-interval s))
     ((not (stringp s)) s)
