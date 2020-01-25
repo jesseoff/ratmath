@@ -99,7 +99,7 @@ If the pipe goes empty, returns nil. The test procedure is called with the curre
       :empty-pipe
       (let (q)
         (labels ((pipe-last (pipe &aux (next (pipe-rest pipe)))
-                   (when (= n (fifo-count q)) (fifo-get! q))
+                   (when (= n (the fixnum (fifo-count q))) (fifo-get! q))
                    (fifo-put! q pipe)
                    (if (pipe-endp next) (fifo-get! q) (pipe-last next))))
           (pipe-last pipe)))))
@@ -122,7 +122,7 @@ infinite."
 (defun list-to-pipe (l)
   "Returns a pipe from a list input argument."
   (declare (type list l) (optimize speed (safety 0) (debug 0)))
-  (labels ((list-pipe (l)
+  (labels ((list-to-pipe (l)
              (if (cdr l)
                  (pipe-cons (car l) (list-to-pipe (cdr l)))
                  (list (car l) :empty-pipe))))
